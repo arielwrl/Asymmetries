@@ -42,5 +42,5 @@ centers['galaxy'] = psb_list
 centers['x_center'] = np.array(center_list)[:, 1]
 centers['y_center'] = np.array(center_list)[:, 0]
 
-centers.write(data_dir + 'fits_maps_t98/psb_centers.rst', format='ascii.rst',
+centers.write(data_dir + 'fits_maps_massformed/psb_centers.rst', format='ascii.rst',
               overwrite=True)

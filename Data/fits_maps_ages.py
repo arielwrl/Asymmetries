@@ -23,6 +23,7 @@ psb_list = np.genfromtxt(data_dir + 'werle_2020_psb_list.txt', dtype=str).transp
 others_list = np.genfromtxt(sinopsis_dir + 'file_list.txt', dtype=str).transpose()
 
 center_list = []
+good_list = []
 bad_list = []
 
 for galaxy_id in others_list:
@@ -40,6 +41,8 @@ for galaxy_id in others_list:
     except Exception:
         bad_list.append(galaxy_id)
         continue
+
+    good_list.append(galaxy_id)
 
     sinopsis_flag = sinopsis_cube.mask == 1
     contours_flag = contours > 2
@@ -64,14 +67,14 @@ for galaxy_id in others_list:
 
 centers = Table()
 
-centers['galaxy'] = others_list
+centers['galaxy'] = good_list
 centers['x_center'] = np.array(center_list)[:, 1]
 centers['y_center'] = np.array(center_list)[:, 0]
 
 centers.write(data_dir + 'fits_maps_ages/centers.rst', format='ascii.rst',
               overwrite=True)
 
-np.savetxt(data_dir + 'bad_list.txt', bad_list.transpose(), fmt=str)
+np.savetxt(data_dir + 'bad_list.txt', bad_list, fmt='%s')
 
 # for galaxy_id in psb_list:
 
