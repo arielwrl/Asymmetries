@@ -1,27 +1,16 @@
-from dash import Dash, dcc, html, Input, Output, dash_table
-from sklearn.model_selection import train_test_split
-from sklearn import linear_model, tree, neighbors
-from sklearn import metrics, datasets
+from dash import Dash, dcc, html, Input, Output
 import plotly.express as px
 import dash_bootstrap_components as dbc
-
 import numpy as np
-import matplotlib.pyplot as plt
-from astropy.io import fits
-import itertools
-from pysinopsis.output import SinopsisCube
-from pysinopsis.utils import calc_center_of_mass, box_filter
+from pysinopsis.utils import box_filter
 import pandas as pd
-from scipy.ndimage import gaussian_filter
-import seaborn as sns
 from toolbox.kubevizResults import kubevizResults as kv
 import plotly.io as pio
 
 pio.templates.default = 'plotly_white'
 
 data_dir = 'C:/Users/ariel/Workspace/GASP/High-z/PSB Regions/Data/'
-highz_dir = 'C:/Users/ariel/Workspace/GASP/High-z/'
-plots_dir = 'C:/Users/ariel/Workspace/GASP/High-z/PSB regions/Plots/maps_and_centers/'
+spectra_dir = 'C:/Users/ariel/Workspace/GASP/High-z/PSB regions/Data/dashboard_data/'
 
 sample_all = pd.read_csv(data_dir + 'all_galaxy_sample.csv')
 
@@ -76,45 +65,6 @@ app.layout = dbc.Container(
     fluid=True,
 )
 
-
-def calc_integrated_spectra(galaxy, sigma=5, restframe=False):
-
-    galaxy_index = np.argwhere(sample_all['ID'] == galaxy)[0][0]
-
-    galaxy_path = 'C:/Users/ariel/Workspace/GASP/High-z/SINOPSIS/' + galaxy + '/'
-
-    sinopsis_cube = SinopsisCube(galaxy_path)   
-
-    contours = fits.open(highz_dir + 'Data/Contours/' + galaxy + '_mask_ellipse.fits')[0].data
-
-    wl = sinopsis_cube.wl
-    if restframe:
-        wl /= (1 + sample_all['z'][galaxy_index])
-
-    contours_flag = contours >= sigma
-
-    spec_list = []
-
-    for i, j in itertools.product(range(sinopsis_cube.cube_shape[1]), range(sinopsis_cube.cube_shape[2])):
-
-        if contours_flag[i, j] == False:
-            continue
-
-        flux = sinopsis_cube.f_obs[:, i, j]
-
-        spec_list.append(flux)
-
-    integrated_spectrum = np.sum(spec_list, axis=0)
-    if restframe:
-        integrated_spectrum *= (1 + sample_all['z'][galaxy_index])
-
-    integrated_spectra = {'wl': wl,
-                          'integrated_spectrum': integrated_spectrum,
-                          'z': sample_all['z'][galaxy_index]}
-
-    return integrated_spectra
-
-
 @app.callback(
     Output("data_summary_title", "children"),
     Output("redshift", "children"),
@@ -146,19 +96,15 @@ def get_galaxy_table(galaxy):
 
 def plot_integrated_spectra(galaxy, box_width):
 
-    spectra15 = calc_integrated_spectra(galaxy, sigma=1.5)
-    spectra3 = calc_integrated_spectra(galaxy, sigma=3)
-    spectra5 = calc_integrated_spectra(galaxy, sigma=5)
+    galaxy_index = np.argwhere(sample_all['ID'] == galaxy)[0][0]
 
-    redshift = spectra15['z']
+    redshift = sample_all['z'][galaxy_index]
 
-    wl15, flux15 = spectra15['wl'], spectra15['integrated_spectrum']
-    wl3, flux3 = spectra3['wl'], spectra3['integrated_spectrum']
-    wl5, flux5 = spectra5['wl'], spectra5['integrated_spectrum']
+    spectra = pd.read_csv(spectra_dir + galaxy + '.csv')
 
-    wl_plot, flux_plot15 = box_filter(wl15, flux15, box_width)
-    flux_plot3 = box_filter(wl3, flux3, box_width)[1]
-    flux_plot5 = box_filter(wl5, flux5, box_width)[1]
+    wl_plot, flux_plot15 = box_filter(spectra['Wavelength'][spectra['Contour Limit'] == 1.5], spectra['Flux'][spectra['Contour Limit'] == 1.5], box_width)
+    flux_plot3 = box_filter(spectra['Wavelength'][spectra['Contour Limit'] == 3], spectra['Flux'][spectra['Contour Limit'] == 3], box_width)[1]
+    flux_plot5 = box_filter(spectra['Wavelength'][spectra['Contour Limit'] == 5], spectra['Flux'][spectra['Contour Limit'] == 5], box_width)[1]
 
     labels = [np.full_like(wl_plot, '1.5'), np.full_like(wl_plot, '3'), np.full_like(wl_plot, '5')]
     labels = np.concatenate(labels)
@@ -197,19 +143,15 @@ def plot_integrated_spectra(galaxy, box_width):
 
 def plot_integrated_spectra_restframe(galaxy, box_width):
 
-    spectra15 = calc_integrated_spectra(galaxy, sigma=1.5, restframe=True)
-    spectra3 = calc_integrated_spectra(galaxy, sigma=3, restframe=True)
-    spectra5 = calc_integrated_spectra(galaxy, sigma=5, restframe=True)
+    galaxy_index = np.argwhere(sample_all['ID'] == galaxy)[0][0]
 
-    redshift = spectra15['z']
+    redshift = sample_all['z'][galaxy_index]
 
-    wl15, flux15 = spectra15['wl'], spectra15['integrated_spectrum']
-    wl3, flux3 = spectra3['wl'], spectra3['integrated_spectrum']
-    wl5, flux5 = spectra5['wl'], spectra5['integrated_spectrum']
+    spectra = pd.read_csv(spectra_dir + galaxy + '_restframe.csv')
 
-    wl_plot, flux_plot15 = box_filter(wl15, flux15, box_width)
-    flux_plot3 = box_filter(wl3, flux3, box_width)[1]
-    flux_plot5 = box_filter(wl5, flux5, box_width)[1]
+    wl_plot, flux_plot15 = box_filter(spectra['Wavelength'][spectra['Contour Limit'] == 1.5], spectra['Flux'][spectra['Contour Limit'] == 1.5], box_width)
+    flux_plot3 = box_filter(spectra['Wavelength'][spectra['Contour Limit'] == 3], spectra['Flux'][spectra['Contour Limit'] == 3], box_width)[1]
+    flux_plot5 = box_filter(spectra['Wavelength'][spectra['Contour Limit'] == 5], spectra['Flux'][spectra['Contour Limit'] == 5], box_width)[1]
 
     labels = [np.full_like(wl_plot, '1.5'), np.full_like(wl_plot, '3'), np.full_like(wl_plot, '5')]
     labels = np.concatenate(labels)
