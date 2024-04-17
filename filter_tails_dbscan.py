@@ -31,11 +31,9 @@ properties_table = pd.read_csv(data_dir + 'sample_properties.csv')
 
 galaxy_list = sample['ID']
 
-select_list = galaxy_list[(sample['Category'] == 'Jellyfish') & (galaxy_list != 'SMACS2131_01') & 
-                          (galaxy_list != 'SMACS2131_03') & (galaxy_list != 'MACS0257_02') & (galaxy_list != 'MACS0940_02')
-                          & (galaxy_list != 'MACS1206_01')].to_list() 
+select_list = galaxy_list[sample['Category'] == 'Jellyfish'].to_list() 
 
-galaxy = 'A370_08'
+galaxy = 'A370_06'
 
 galaxy_index = np.argwhere(galaxy_list == galaxy)[0][0]
 
@@ -46,7 +44,7 @@ sinopsis_cube = SinopsisCube(galaxy_path)
 contours = fits.open(highz_dir + 'Data/Contours/' + galaxy + '_mask_ellipse.fits')[0].data
 g_band = fits.open(highz_dir + 'Data/G-Band/' + galaxy + '_DATACUBE_FINAL_v1_SDSS_g.fits')[1].data
 
-ellipse = np.genfromtxt(highz_dir + 'Data/Masks/' + galaxy + '_contours_5.0s_ellipse.txt').transpose()
+ellipse = np.genfromtxt(highz_dir + 'Data/Contours/' + galaxy + '_contours_5s_ellipse.txt').transpose()
 
 emission_only = kv(highz_dir + 'Data/Emission/' + galaxy + '_DATACUBE_FINAL_v1_ec_eo_res_gau_spax_noflag.fits')
 
